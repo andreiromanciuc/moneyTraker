@@ -63,12 +63,40 @@ struct AddCardForm: View {
                 
             }
             .navigationTitle("Add card form")
-            .navigationBarItems(leading: Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }, label: {
-                Text("Cancel")
-            }))
+            .navigationBarItems(leading: cancelButton, trailing: savebutton)
         }
+    }
+    
+    private var cancelButton: some View {
+        Button(action: {
+            presentationMode.wrappedValue.dismiss()
+        }, label: {
+            Text("Cancel")
+        })
+    }
+    
+    private var savebutton: some View {
+        Button(action: {
+            let viewContext = PersistenceController.shared.container.viewContext
+            
+            let card = Card(context: viewContext)
+            card.name = self.name
+            card.number = self.cardNumber
+            card.expMounth = Int16(self.mounth)
+            card.expYear = Int16(self.year)
+            card.limit = Int16(self.limit) ?? 0
+            
+            do{
+                try viewContext.save()
+            } catch {
+             print("Failed to persist new card: \(error)")
+            }
+            
+            presentationMode.wrappedValue.dismiss()
+            
+        }, label: {
+            Text("Save")
+        })
     }
 }
 

@@ -13,19 +13,28 @@ struct MainView: View {
     
     @State private var shouldPresentAddCardForm = false
     
+    @Environment(\.managedObjectContext) private var viewContext
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Card.timestamp, ascending: true)],
+        animation: .default)
+    private var cards: FetchedResults<Card>
+    
     var body: some View {
         NavigationView {
             ScrollView {
                 
-                TabView {
-                    ForEach(0..<5) { num in
-                        CardView()
-                            .padding(.bottom, 50)
+                if !cards.isEmpty {
+                    TabView {
+                        ForEach(cards) { card in
+                            CardView()
+                                .padding(.bottom, 50)
+                        }
                     }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
+                    .frame(height: 280)
+                    .indexViewStyle(.page(backgroundDisplayMode: .always))
                 }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
-                .frame(height: 280)
-                .indexViewStyle(.page(backgroundDisplayMode: .always))
                 
                 Spacer()
                     .fullScreenCover(isPresented: $shouldPresentAddCardForm) {
@@ -56,7 +65,6 @@ struct MainView: View {
                 Text("1234 1234 1234 1234")
                 
                 Text("Credit limit: $50,000")
-                
                 
                 HStack { Spacer() }
                 
@@ -90,6 +98,8 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
+        let viewContext = PersistenceController.shared.container.viewContext
         MainView()
+            .environment(\.managedObjectContext, viewContext)
     }
 }
