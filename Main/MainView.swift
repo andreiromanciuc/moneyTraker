@@ -16,7 +16,7 @@ struct MainView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Card.timestamp, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \Card.timestamp, ascending: false)],
         animation: .default)
     private var cards: FetchedResults<Card>
     
@@ -34,6 +34,8 @@ struct MainView: View {
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                     .frame(height: 280)
                     .indexViewStyle(.page(backgroundDisplayMode: .always))
+                } else {
+                    emptyPromptMessage
                 }
                 
                 Spacer()
@@ -44,16 +46,65 @@ struct MainView: View {
             .navigationTitle("Credit cards")
             .navigationBarItems(trailing: addCardButton)
         }
+        
+    }
+    
+    private var emptyPromptMessage: some View {
+        VStack {
+            Text("You currently have no cards in the system.")
+                .padding(.horizontal, 48)
+                .padding(.vertical)
+                .multilineTextAlignment(.center)
+            
+            Button {
+                shouldPresentAddCardForm.toggle()
+            } label: {
+                Text("+ Add your first card")
+                    .foregroundColor(Color(.systemBackground))
+            }
+            .padding(EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14))
+            .background(Color(.label))
+            .cornerRadius(10)
+            
+        }.font(.system(size: 22, weight: .semibold))
     }
     
     struct CardView: View {
         
         let card: Card
         
+        @State private var actionSheet = false
+        @State private var shouldShowEditForm = false
+        @State var refreshId = UUID()
+        
         var body: some View {
             VStack(alignment: .leading, spacing: 16) {
-                Text(card.name ?? "")
-                    .font(.system(size: 24, weight: .semibold))
+                
+                HStack{
+                    Text(card.name ?? "")
+                        .font(.system(size: 24, weight: .semibold))
+                    Spacer()
+                    Button {
+                        actionSheet.toggle()
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 28, weight: .bold))
+                    }
+                    .confirmationDialog(Text("Title"), isPresented: $actionSheet) {
+                        
+                        Button("Edit") {
+                            shouldShowEditForm.toggle()
+                        }
+                        
+                        Button("Delete card", role: .destructive) {
+                            deleteCard()
+                        }
+                    } message: {
+                        Text(self.card.name ?? "")
+                    }
+                    
+                }
+                
                 
                 HStack {
                     Image(card.type ?? "")
@@ -61,15 +112,21 @@ struct MainView: View {
                         .scaledToFit()
                         .frame(height: 44)
                     Spacer()
-                    Text("Balance: ")
+                    Text("Balance: 50000")
                         .font(.system(size: 18, weight: .semibold))
                 }
                 
                 Text(card.number ?? "")
                 
-                Text("Credit limit: \(card.limit)")
-                
-                HStack { Spacer() }
+                HStack {
+                    Text("Credit limit: \(card.limit)")
+                    Spacer()
+                    VStack{
+                        Text("Valid Thru")
+                        Text("\(card.expMounth)/\(card.expYear)")
+                    }
+                    
+                }
                 
             }
             .foregroundColor(.white)
@@ -93,7 +150,23 @@ struct MainView: View {
             .padding(.horizontal)
             .padding(.top, 8)
             
+            .fullScreenCover(isPresented: $shouldShowEditForm) {
+                AddCardForm(card: self.card)
+            }
         }
+        
+        private func deleteCard() {
+            let viewContext = PersistenceController.shared.container.viewContext
+            
+            viewContext.delete(card)
+            
+            do {
+                try viewContext.save()
+            } catch {
+                print(error)
+            }
+        }
+    
     }
     
     var addCardButton: some View {
