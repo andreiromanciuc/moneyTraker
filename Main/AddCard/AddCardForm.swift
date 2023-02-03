@@ -85,18 +85,32 @@ struct AddCardForm: View {
             card.expMounth = Int16(self.mounth)
             card.expYear = Int16(self.year)
             card.limit = Int16(self.limit) ?? 0
+            card.timestamp = Date()
+            card.color = UIColor(self.color).encode()
+            card.type = cardType
             
             do{
                 try viewContext.save()
+                
+                presentationMode.wrappedValue.dismiss()
             } catch {
              print("Failed to persist new card: \(error)")
             }
             
-            presentationMode.wrappedValue.dismiss()
-            
         }, label: {
             Text("Save")
         })
+    }
+}
+
+extension UIColor {
+    
+    class func color(data: Data) -> UIColor? {
+        return try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? UIColor
+    }
+    
+    func encode() -> Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false)
     }
 }
 

@@ -27,7 +27,7 @@ struct MainView: View {
                 if !cards.isEmpty {
                     TabView {
                         ForEach(cards) { card in
-                            CardView()
+                            CardView(card: card)
                                 .padding(.bottom, 50)
                         }
                     }
@@ -47,24 +47,27 @@ struct MainView: View {
     }
     
     struct CardView: View {
+        
+        let card: Card
+        
         var body: some View {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Preview of our code so far")
+                Text(card.name ?? "")
                     .font(.system(size: 24, weight: .semibold))
                 
                 HStack {
-                    Image("VisaImage")
+                    Image(card.type ?? "")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 44)
                     Spacer()
-                    Text("Balance: $5,000")
+                    Text("Balance: ")
                         .font(.system(size: 18, weight: .semibold))
                 }
                 
-                Text("1234 1234 1234 1234")
+                Text(card.number ?? "")
                 
-                Text("Credit limit: $50,000")
+                Text("Credit limit: \(card.limit)")
                 
                 HStack { Spacer() }
                 
@@ -72,7 +75,18 @@ struct MainView: View {
             .foregroundColor(.white)
             .padding()
             .background(
-                LinearGradient(colors: [Color.blue.opacity(0.5), Color.blue], startPoint: .center, endPoint: .bottom)
+                
+                VStack {
+                    if let colorData = card.color,
+                        let uiColor = UIColor.color(data: colorData),
+                        let actualColor = Color(uiColor) {
+                        LinearGradient(colors: [actualColor.opacity(0.5), actualColor], startPoint: .center, endPoint: .bottom)
+                    } else {
+                        Color.purple
+                    }
+      
+                }
+                
             )
             .cornerRadius(8)
             .shadow(radius: 5)
