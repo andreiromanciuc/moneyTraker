@@ -7,11 +7,10 @@
 
 import SwiftUI
 
-
-
 struct MainView: View {
     
     @State private var shouldPresentAddCardForm = false
+    @State private var shouldShowTransactionForm = false
     
     @Environment(\.managedObjectContext) private var viewContext
 
@@ -34,6 +33,25 @@ struct MainView: View {
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                     .frame(height: 280)
                     .indexViewStyle(.page(backgroundDisplayMode: .always))
+                    
+                    Text("Get started by adding your first transaction")
+                    
+                    Button {
+                        shouldShowTransactionForm.toggle()
+                    } label: {
+                        Text("+ Transaction")
+                            .padding(EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14))
+                            .background(Color(.label))
+                            .foregroundColor(Color(.systemBackground))
+                            .font(.headline)
+                            .cornerRadius(5)
+                    }
+                    .fullScreenCover(isPresented: $shouldShowTransactionForm) {
+                        AddTransactionForm()
+                    }
+                    
+                    
+                    
                 } else {
                     emptyPromptMessage
                 }
@@ -105,12 +123,13 @@ struct MainView: View {
                     
                 }
                 
-                
                 HStack {
-                    Image(card.type ?? "")
+                    let imageName = card.type?.lowercased() ?? ""
+                    Image(imageName)
                         .resizable()
                         .scaledToFit()
                         .frame(height: 44)
+                        .clipped()
                     Spacer()
                     Text("Balance: 50000")
                         .font(.system(size: 18, weight: .semibold))
@@ -123,9 +142,8 @@ struct MainView: View {
                     Spacer()
                     VStack{
                         Text("Valid Thru")
-                        Text("\(card.expMounth)/\(card.expYear)")
+                        Text("\(String(format: "%02d", card.expMounth + 1))/\(String(card.expYear % 2000))")
                     }
-                    
                 }
                 
             }
