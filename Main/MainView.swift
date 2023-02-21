@@ -18,26 +18,29 @@ struct MainView: View {
         animation: .default)
     private var cards: FetchedResults<Card>
     
-    @State var cardSelectionindex = 0
+    @State var cardSelectionIndex = -1
     
     var body: some View {
         NavigationView {
             ScrollView {
                 
                 if !cards.isEmpty {
-                    TabView(selection: $cardSelectionindex) {
-                        ForEach(0..<cards.count, id: \.self) { i in
-                            CardView(card: cards[i])
+                    TabView(selection: $cardSelectionIndex) {
+                        ForEach(cards) { card in
+                            CardView(card: card)
                                 .padding(.bottom, 50)
-                                .tag(i)
+                                .tag(card.hash)
                         }
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                     .frame(height: 280)
                     .indexViewStyle(.page(backgroundDisplayMode: .always))
+                    .onAppear {
+                        self.cardSelectionIndex = cards.first?.hash ?? -1
+                    }
                     
-                    if let selectedCard = cards[cardSelectionindex] {
-                        TransactionsListView(card: selectedCard)
+                    if let firstIndex = cards.first(where: {$0.hash == cardSelectionIndex}) {
+                        TransactionsListView(card: firstIndex)
                     }
                     
                 } else {
@@ -46,7 +49,9 @@ struct MainView: View {
                 
                 Spacer()
                     .fullScreenCover(isPresented: $shouldPresentAddCardForm) {
-                        AddCardForm()
+                        AddCardForm(card: nil) { card in
+                            self.cardSelectionIndex = card.hash
+                        }
                     }
             }
             .navigationTitle("Credit cards")
