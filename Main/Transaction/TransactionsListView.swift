@@ -9,18 +9,29 @@ import SwiftUI
 
 struct TransactionsListView: View {
     
+    let card: Card
+    
+    init(card: Card) {
+        self.card = card
+        
+        fetchRequest = FetchRequest<CardTransaction>(entity: CardTransaction.entity(), sortDescriptors: [.init(key: "timestamp", ascending: false)], predicate: .init(format: "card == %@", self.card))
+    }
+    
     @State private var shouldShowTransactionForm = false
     
     @Environment(\.managedObjectContext) private var viewContext
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \CardTransaction.timestamp, ascending: false)],
-        animation: .default)
-    private var transactions: FetchedResults<CardTransaction>
+    var fetchRequest: FetchRequest<CardTransaction>
+    
+    
+//    @FetchRequest(
+//        sortDescriptors: [NSSortDescriptor(keyPath: \CardTransaction.timestamp, ascending: false)],
+//        animation: .default)
+//    private var transactions: FetchedResults<CardTransaction>
     
     var body: some View {
         VStack{
             
-            if transactions.isEmpty {
+            if fetchRequest.wrappedValue.isEmpty {
                 Text("Get started by adding your first transaction")
             }
             
@@ -35,10 +46,10 @@ struct TransactionsListView: View {
                     .cornerRadius(5)
             }
             .fullScreenCover(isPresented: $shouldShowTransactionForm) {
-                AddTransactionForm()
+                AddTransactionForm(card: self.card)
             }
             
-            ForEach(transactions) { transaction in
+            ForEach(fetchRequest.wrappedValue) { transaction in
                 CardTransactionView(transaction: transaction)
             }
         }
@@ -48,7 +59,9 @@ struct TransactionsListView: View {
 
 struct CardTransactionView: View {
     
+    
     let transaction: CardTransaction
+    
     
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -127,10 +140,21 @@ struct CardTransactionView: View {
 }
 
 struct TransactionListView_Previews: PreviewProvider {
+    static let firstcard: Card? = {
+        let context = PersistenceController.shared.container.viewContext
+        let request = Card.fetchRequest()
+        request.sortDescriptors = [.init(key: "timestamp", ascending: false)]
+        
+        return try? context.fetch(request).first
+    }()
+    
     static var previews: some View {
         let context = PersistenceController.shared.container.viewContext
         ScrollView {
-            TransactionsListView()
+            
+            if let card = firstcard {
+                TransactionsListView(card: card)
+            }
         }
         .environment(\.managedObjectContext, context)
     }

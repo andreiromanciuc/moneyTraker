@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MainView: View {
     
+    
     @State private var shouldPresentAddCardForm = false
     
     @Environment(\.managedObjectContext) private var viewContext
@@ -17,23 +18,27 @@ struct MainView: View {
         animation: .default)
     private var cards: FetchedResults<Card>
     
+    @State var cardSelectionindex = 0
     
     var body: some View {
         NavigationView {
             ScrollView {
                 
                 if !cards.isEmpty {
-                    TabView {
-                        ForEach(cards) { card in
-                            CardView(card: card)
+                    TabView(selection: $cardSelectionindex) {
+                        ForEach(0..<cards.count, id: \.self) { i in
+                            CardView(card: cards[i])
                                 .padding(.bottom, 50)
+                                .tag(i)
                         }
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                     .frame(height: 280)
                     .indexViewStyle(.page(backgroundDisplayMode: .always))
                     
-                    TransactionsListView()
+                    if let selectedCard = cards[cardSelectionindex] {
+                        TransactionsListView(card: selectedCard)
+                    }
                     
                 } else {
                     emptyPromptMessage
