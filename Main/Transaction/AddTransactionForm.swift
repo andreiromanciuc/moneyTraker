@@ -27,12 +27,12 @@ struct AddTransactionForm: View {
                     TextField("Amount", text: $amount)
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                     
-                    NavigationLink {
-                        Text("new cat page")
-                    } label: {
-                        Text("Many to many")
+                }
+                
+                Section(header: Text("Categories")) { NavigationLink(destination:
+                    CategoriesListView().navigationTitle("Categories")) {
+                        Text("Select categories")
                     }
-                    
                 }
                 
                 Section(header: Text("Photo/Receipt")) {
