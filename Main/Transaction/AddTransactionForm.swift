@@ -10,6 +10,28 @@ import SwiftUI
 struct AddTransactionForm: View {
     
     let card: Card
+    
+    init(card: Card) {
+        self.card = card
+        
+        let context = PersistenceController.shared.container.viewContext
+        
+        let request = TransactionCategory.fetchRequest()
+        request.sortDescriptors = [.init(key: "timestamp", ascending: false)]
+        
+        do {
+            let result = try context.fetch(request)
+            
+            if let first = result.first {
+                self._selectedCategories = .init(initialValue: [first])
+            }
+            
+        } catch {
+            print("Failed to preselect categories:", error)
+        }
+    }
+    
+    
     @Environment(\.presentationMode) var presentationMode
     @State private var name = ""
     @State private var amount = ""
@@ -17,6 +39,7 @@ struct AddTransactionForm: View {
     @State private var photoData: Data?
     
     @State private var shouldPresentPhotoPicker = false
+    @State private var selectedCategories = Set<TransactionCategory>()
     
     var body: some View {
         NavigationView {
@@ -29,9 +52,26 @@ struct AddTransactionForm: View {
                     
                 }
                 
-                Section(header: Text("Categories")) { NavigationLink(destination:
-                    CategoriesListView().navigationTitle("Categories")) {
+                Section(header: Text("Categories")) {
+                    NavigationLink(destination:
+                    CategoriesListView(selectedCategories: $selectedCategories).navigationTitle("Categories")
+                    .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)){
                         Text("Select categories")
+                    }
+                    
+                    let sortedByTimeStampCategories = Array(selectedCategories).sorted(by: {$0.timestamp?.compare($1.timestamp ?? Date()) == .orderedDescending}) 
+                    
+                    ForEach(sortedByTimeStampCategories) { category in
+                        HStack(spacing: 12){
+                            if let data = category.colorData, let uiColor = UIColor.color(data: data) {
+                                let color = Color(uiColor)
+                                Spacer()
+                                    .frame(width: 30, height: 10)
+                                    .background(color)
+                            }
+                            
+                            Text(category.name ?? "")
+                        }
                     }
                 }
                 
@@ -68,6 +108,8 @@ struct AddTransactionForm: View {
             transaction.timestamp = self.date
             transaction.photoData = self.photoData
             transaction.card = self.card
+            
+            transaction.categories = self.selectedCategories as NSSet
             
             do {
                 try context.save()
