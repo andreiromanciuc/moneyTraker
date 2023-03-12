@@ -130,6 +130,7 @@ struct CardTransactionView: View {
     
     
     let transaction: CardTransaction
+    @Environment(\.colorScheme) var colorScheme
     
     
     private let dateFormatter: DateFormatter = {
@@ -229,7 +230,7 @@ struct CardTransactionView: View {
         }
         .foregroundColor(Color(.label))
         .padding()
-        .background(Color.white)
+        .background(colorScheme == .dark ? .gray : .white)
         .cornerRadius(5)
         .shadow(radius: 5)
         .padding()
