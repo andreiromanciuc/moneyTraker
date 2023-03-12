@@ -52,13 +52,13 @@ struct TransactionsListView: View {
                     addTransactionButton
                     filterButton
                         .sheet(isPresented: $shouldFilterSheet) {
-                            FilterSheet { categories in
-                                
+                            FilterSheet(selectedCategories: self.selectedCategories) { categories in
+                                self.selectedCategories = categories
                             }
                         }
                 }.padding(.horizontal)
                 
-                ForEach(fetchRequest.wrappedValue) { transaction in
+                ForEach(filterTransactions(selectedCategories: self.selectedCategories)) { transaction in
                     CardTransactionView(transaction: transaction)
                 }
             }
@@ -68,6 +68,31 @@ struct TransactionsListView: View {
             AddTransactionForm(card: self.card)
         }
     }
+    
+    @State var selectedCategories = Set<TransactionCategory>()
+    
+    private func filterTransactions(selectedCategories: Set<TransactionCategory>) -> [CardTransaction] {
+        
+        if selectedCategories.isEmpty {
+            return Array(fetchRequest.wrappedValue)
+        }
+        
+        return fetchRequest.wrappedValue.filter { transaction in
+            var shouldKeep = false
+            
+            
+            if let categories = transaction.categories as? Set<TransactionCategory> {
+                categories.forEach({ category in
+                    if selectedCategories.contains(category) {
+                        shouldKeep = true
+                    }
+                })
+            }
+            
+            return shouldKeep
+        }
+    }
+    
     private var filterButton: some View {
         Button {
             shouldFilterSheet.toggle()
@@ -214,6 +239,7 @@ struct CardTransactionView: View {
 
 struct FilterSheet: View {
     
+    @State var selectedCategories: Set<TransactionCategory>
     let didSaveFilters: (Set<TransactionCategory>) -> ()
     
     @Environment(\.managedObjectContext) private var viewContext
@@ -222,7 +248,7 @@ struct FilterSheet: View {
         animation: .default)
     private var categories: FetchedResults<TransactionCategory>
     
-    @State var selectedCategories = Set<TransactionCategory>()
+    
     
     var body: some View {
         NavigationView {
